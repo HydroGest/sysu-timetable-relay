@@ -119,6 +119,63 @@ powershell -ExecutionPolicy Bypass -File scripts\allow_firewall.ps1
 }
 ```
 
+## 企业微信通知（WeCom）
+
+relay 提供统一的企业微信通知接收与查询接口，采集端可以是 Android 通知转发 App、模拟器，或后续的 Windows 窗口监听器。
+
+### 配置
+
+首次运行会在 `server/wecom_config.json` 自动生成配置（模板见 `server/wecom_config.example.json`）。可配置项：
+
+- `token`：写入接口的访问令牌，留空表示不校验；局域网开放时建议设置
+- `allowed_groups` / `blocked_groups`：按群名子串过滤
+- `allowed_keywords` / `blocked_keywords`：按群名、标题、正文子串过滤
+- `max_events`：内存保留的最大事件数
+
+### 接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `POST /wecom/events` | 接收通知事件（JSON） |
+| `GET /wecom/latest` | 最近一条已通过过滤的事件 |
+| `GET /wecom/list?limit=20` | 最近 N 条事件 |
+
+`POST /wecom/events` 请求示例：
+
+```json
+{
+  "source": "android",
+  "group": "班级通知群",
+  "sender": "辅导员",
+  "title": "明天停课",
+  "text": "明天上午课程暂停",
+  "ts": "2026-08-29T10:00:00+08:00"
+}
+```
+
+返回：
+
+```json
+{
+  "accepted": true,
+  "event": {
+    "id": 1787972000000,
+    "source": "android",
+    "group": "班级通知群",
+    "sender": "辅导员",
+    "title": "明天停课",
+    "text": "明天上午课程暂停",
+    "ts": "2026-08-29T10:00:00+08:00"
+  }
+}
+```
+
+配置了 `token` 后，采集端用 `Authorization: Bearer <token>` 或请求体里的 `token` 字段。
+
+### 采集端现状
+
+企业微信 PC 端不发 Windows 原生 Toast，UI Automation 树为空，本地数据库加密，Windows 上没有稳定官方通道。推荐用 Android 手机或模拟器上的通知转发 App 把通知 POST 到这里；纯 Windows 的窗口钩子/OCR 方案仍在实验阶段。
+
 ## 安全说明
 
 - `/cookie` 只接受来自本机的 POST，局域网其他设备不能覆盖你的 Cookie。

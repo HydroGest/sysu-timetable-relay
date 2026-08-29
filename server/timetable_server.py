@@ -22,6 +22,8 @@ import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from wecom import WeComStore
+
 
 BASE = "https://jwxt.sysu.edu.cn/jwxt"
 QUERY_URL = BASE + "/timetable-search/stuTimeTabPrint/studentQuery"
@@ -137,6 +139,7 @@ class Session:
 
 
 S = Session()
+WECOM = WeComStore()
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -167,6 +170,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/wecom/events":
+            self._wecom_events()
+            return
         if parsed.path != "/cookie":
             self._send(404, {"error": "not found"})
             return
@@ -185,6 +191,25 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send(400, {"error": str(e)})
 
+    def _wecom_events(self):
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            data = json.loads(self.rfile.read(length).decode("utf-8"))
+        except Exception as e:
+            self._send(400, {"error": f"bad json: {e}"})
+            return
+        auth = (self.headers.get("Authorization") or "").removeprefix("Bearer ").strip()
+        token = auth or str(data.get("token") or "")
+        if not WECOM.authorize(token):
+            self._send(403, {"error": "forbidden"})
+            return
+        event, reason = WECOM.ingest(data)
+        if event is None:
+            code = 400 if reason == "empty" else 200
+            self._send(code, {"accepted": False, "reason": reason})
+            return
+        self._send(200, {"accepted": True, "event": event})
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(parsed.query)
@@ -192,7 +217,18 @@ class Handler(BaseHTTPRequestHandler):
         today = datetime.date.today()
         try:
             if path == "/health":
-                self._send(200, {"ok": True, "session_ok": bool(S.cookie())})
+                self._send(200, {
+                    "ok": True,
+                    "session_ok": bool(S.cookie()),
+                    "wecom_events": WECOM.count(),
+                })
+                return
+            if path == "/wecom/latest":
+                self._send(200, {"event": WECOM.latest()})
+                return
+            if path == "/wecom/list":
+                limit = int((q.get("limit") or ["20"])[0])
+                self._send(200, {"events": WECOM.list(limit)})
                 return
             if path == "/today":
                 self._send(200, S.day_classes(today))
