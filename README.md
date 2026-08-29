@@ -184,6 +184,26 @@ python server\wecom_win_probe.py --duration 60
 
 保持脚本运行，在企业微信里给自己或任意群发一条消息，脚本会打印新出现/变化的顶层窗口。能稳定识别弹窗后，再决定是否做窗口钩子 + OCR。
 
+### Android 转发示例
+
+1. 手机或模拟器安装企业微信并登录，确认系统通知权限开启，企微设置里“显示消息内容”打开。
+2. 用 Tasker + AutoNotification、MacroDroid 或任意“通知转发”App，监听企业微信（包名 `com.tencent.wework`）的通知。
+3. 转发到 relay：
+
+```json
+{
+  "source": "android",
+  "group": "班级通知群",
+  "sender": "辅导员",
+  "title": "明天停课",
+  "text": "明天上午课程暂停"
+}
+```
+
+地址填 `http://<电脑IP>:8123/wecom/events`；如果 `wecom_config.json` 里设置了 `token`，加上 `Authorization: Bearer <token>`。
+
+4. 服务端过滤由 `server/wecom_config.json` 控制；用 `GET /wecom/latest` 可立即检查是否收到。
+
 ## 安全说明
 
 - `/cookie` 只接受来自本机的 POST，局域网其他设备不能覆盖你的 Cookie。
