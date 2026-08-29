@@ -176,6 +176,14 @@ relay 提供统一的企业微信通知接收与查询接口，采集端可以�
 
 企业微信 PC 端不发 Windows 原生 Toast，UI Automation 树为空，本地数据库加密，Windows 上没有稳定官方通道。推荐用 Android 手机或模拟器上的通知转发 App 把通知 POST 到这里；纯 Windows 的窗口钩子/OCR 方案仍在实验阶段。
 
+想先验证 Windows 弹窗能不能读，可以运行：
+
+```powershell
+python server\wecom_win_probe.py --duration 60
+```
+
+保持脚本运行，在企业微信里给自己或任意群发一条消息，脚本会打印新出现/变化的顶层窗口。能稳定识别弹窗后，再决定是否做窗口钩子 + OCR。
+
 ## 安全说明
 
 - `/cookie` 只接受来自本机的 POST，局域网其他设备不能覆盖你的 Cookie。
