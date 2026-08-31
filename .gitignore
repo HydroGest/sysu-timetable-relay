@@ -5,5 +5,6 @@ wecom_config.json
 targets.json
 targets_grab.json
 targets_pool.json
+grab_result.json
 .vscode/
 .idea/
