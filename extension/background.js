@@ -8,17 +8,26 @@ function collectCookie() {
   });
 }
 
+function setBadge(text, color) {
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
+}
+
 async function pushCookie() {
   try {
     const cookie = await collectCookie();
-    if (!cookie) return;
+    if (!cookie) {
+      setBadge("!", "#c0392b");
+      return;
+    }
     await fetch(SERVER + "/cookie", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cookie, at: Date.now() }),
     });
+    setBadge("OK", "#2e8b57");
   } catch (e) {
-    // 本地服务未启动时静默重试
+    setBadge("!", "#c0392b");
   }
 }
 
@@ -51,5 +60,12 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     /jwxt\.sysu\.edu\.cn|cas\.sysu\.edu\.cn/.test(tab.url)
   ) {
     setTimeout(pushCookie, 1200);
+  }
+});
+
+chrome.cookies.onChanged.addListener((changeInfo) => {
+  const c = changeInfo.cookie || {};
+  if (/(^|\.)sysu\.edu\.cn$/.test(c.domain || "")) {
+    setTimeout(pushCookie, 300);
   }
 });
