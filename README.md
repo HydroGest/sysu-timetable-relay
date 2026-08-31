@@ -53,7 +53,7 @@ python server\timetable_server.py
 
 打开“开发人员模式”，选择“加载解压的扩展”，然后选择本项目的 `extension` 文件夹。
 
-扩展会自动读取 `jwxt.sysu.edu.cn` 和 `cas.sysu.edu.cn` 的 Cookie，在浏览器启动、教务页面加载完成时各推一次，之后每 5 分钟同步一次。
+扩展会自动读取 `jwxt.sysu.edu.cn` 和 `cas.sysu.edu.cn` 的 Cookie，在浏览器启动、教务页面加载完成时各推一次，之后每 1 分钟同步一次；点击工具栏图标可立即手动同步。
 
 ### 4. 验证
 

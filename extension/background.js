@@ -23,7 +23,7 @@ async function pushCookie() {
 }
 
 function scheduleSync() {
-  chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+  chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 1 });
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -33,6 +33,10 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onStartup.addListener(() => {
   scheduleSync();
+  pushCookie();
+});
+
+chrome.action.onClicked.addListener(() => {
   pushCookie();
 });
 

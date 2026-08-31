@@ -2,5 +2,6 @@ __pycache__/
 *.pyc
 cookies.txt
 wecom_config.json
+targets.json
 .vscode/
 .idea/

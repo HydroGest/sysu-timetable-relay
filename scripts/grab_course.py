@@ -90,16 +90,21 @@ def api(cookie, path, payload=None):
     if cookie:
         headers["Cookie"] = cookie
     req = urllib.request.Request(url, data=data, headers=headers, method="POST" if data is not None else "GET")
-    try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
+    last_error = None
+    for attempt in range(1, 4):
         try:
-            return json.loads(e.read().decode("utf-8"))
-        except Exception:
-            raise RuntimeError(f"HTTP {e.code} {e.reason}")
-    except urllib.error.URLError as e:
-        raise RuntimeError(f"网络错误: {e.reason}")
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            try:
+                return json.loads(e.read().decode("utf-8"))
+            except Exception:
+                raise RuntimeError(f"HTTP {e.code} {e.reason}")
+        except urllib.error.URLError as e:
+            last_error = e
+            if attempt < 3:
+                time.sleep(1.5 * attempt)
+    raise RuntimeError(f"网络错误: {last_error.reason}")
 
 
 def get_stage(cookie):
@@ -255,10 +260,17 @@ def main():
         print("[cookie] 未提供 Cookie。用 --cookie 或 --cookie-file，或设置 SYSU_COOKIE")
         sys.exit(1)
 
-    try:
-        stage = get_stage(cookie)
-    except Exception as e:
-        print(f"[stage] 获取选课阶段失败: {e}")
+    stage = None
+    for attempt in range(1, 6):
+        try:
+            stage = get_stage(cookie)
+            break
+        except Exception as e:
+            print(f"[stage] 第 {attempt} 次获取选课阶段失败: {e}")
+            if attempt < 5:
+                time.sleep(3)
+    if stage is None:
+        print("[stage] 连续 5 次失败，退出")
         sys.exit(1)
 
     semester = stage.get("semesterYear") or ""
@@ -274,7 +286,18 @@ def main():
         for t in targets:
             print(f"== {t.get('name')} ==")
             for page in range(1, 6):
-                rows, total = list_courses(cookie, stage, t, page, args.page_size)
+                rows, total = None, 0
+                for attempt in range(1, 4):
+                    try:
+                        rows, total = list_courses(cookie, stage, t, page, args.page_size)
+                        break
+                    except Exception as e:
+                        print(f"[list] {t.get('name')} 第{page}页 第{attempt}次失败: {e}")
+                        if attempt < 3:
+                            time.sleep(2)
+                if rows is None:
+                    print(f"[list] {t.get('name')} 第{page}页 连续失败，跳过")
+                    continue
                 for row in rows:
                     if matches(t, row):
                         print(json.dumps({k: row.get(k) for k in keys}, ensure_ascii=False))
