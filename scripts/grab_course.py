@@ -283,7 +283,7 @@ def main():
         keys = (
             "courseNum", "courseName", "teachingClassNum", "teachingClassName",
             "teachingClassId", "teachCourseId", "remainNum", "selectedStatus",
-            "courseCateCode", "courseCate",
+            "courseCateCode", "courseCate", "teachingTimePlace", "scheduleExamTime",
         )
         for t in targets:
             print(f"== {t.get('name')} ==")
