@@ -6,6 +6,7 @@ targets.json
 targets_grab.json
 targets_pool.json
 targets_prepare.json
+targets_recommend.json
 grab_result.json
 .vscode/
 .idea/
