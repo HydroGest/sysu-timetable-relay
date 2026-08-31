@@ -1,0 +1,22 @@
+{
+  "targets": [
+    {
+      "name": "羽毛球",
+      "courseName": "羽毛球",
+      "selectedType": "3",
+      "selectedCate": "10"
+    },
+    {
+      "name": "红楼梦",
+      "courseName": "红楼梦",
+      "selectedType": "4",
+      "selectedCate": "30"
+    },
+    {
+      "name": "高级语言程序设计",
+      "courseNum": "MA111",
+      "selectedType": "1",
+      "selectedCate": "11"
+    }
+  ]
+}

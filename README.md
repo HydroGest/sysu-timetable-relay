@@ -34,11 +34,15 @@ python -m pip install -r requirements.txt
 
 ### 2. 启动服务
 
+推荐双击 `server\start_hidden.vbs`，完全无窗口后台运行，没有控制台会一直占着任务栏。
+
+调试时才用控制台方式：
+
 ```powershell
 python server\timetable_server.py
 ```
 
-也可以双击 `server\start_hidden.vbs` 隐藏后台运行。托盘菜单里有“状态页”和“退出”。
+托盘菜单里有“状态页”和“退出”（未安装 `pystray` 时没有托盘图标，但服务仍在运行）。
 
 ### 3. 加载浏览器扩展
 
@@ -203,6 +207,34 @@ python server\wecom_win_probe.py --duration 60
 地址填 `http://<电脑IP>:8123/wecom/events`；如果 `wecom_config.json` 里设置了 `token`，加上 `Authorization: Bearer <token>`。
 
 4. 服务端过滤由 `server/wecom_config.json` 控制；用 `GET /wecom/latest` 可立即检查是否收到。
+
+## 选课抢课脚本（可选）
+
+仓库里的 `scripts/grab_course.py` 封装了教务选课接口：
+
+- `POST /choose-course-front-server/classCourseInfo/course/list`：查询可选课程
+- `POST /choose-course-front-server/classCourseInfo/course/choose`：选课（先 `check:true`，遇到先修课检查再 `check:false` 确认）
+- `POST /choose-course-front-server/classCourseInfo/course/back`：退课
+
+用法：
+
+```powershell
+Copy-Item scripts\grab_targets.example.json targets.json
+# 编辑 targets.json，填入你要抢的课程
+python scripts\grab_course.py --targets targets.json --cookie "你的 Cookie"
+```
+
+Cookie 可以直接从浏览器 F12 -> Network 里复制，也可以用 relay 的 `server\cookies.txt`（`--cookie-file`）。
+
+目标字段：
+
+- `name`：显示名
+- `courseName` / `courseNum`：在可选课程列表里匹配
+- `clazzId`：可选，直接指定教学班 ID，跳过搜索
+- `selectedType`：`1` 本专业、`2` 跨专业、`3` 体育、`4` 公选
+- `selectedCate`：`11` 专必、`21` 专选、`30` 公选、`10` 公必
+
+**注意**：教务系统明确提示使用插件抢课可能被锁号（错误码 `52021102` / `52021136`）。脚本默认 1.5 秒间隔加随机抖动，不要调低于 1 秒，不要在高峰期同时开多个实例。
 
 ## 安全说明
 
