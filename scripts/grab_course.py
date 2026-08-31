@@ -84,9 +84,8 @@ def api(cookie, path, payload=None):
     }
     data = None
     if payload is not None:
-        # 与前端一致：axios 把对象序列化成 JSON，但 Content-Type 保持表单
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Content-Type"] = "application/x-www-form-urlencoded;charset=utf-8"
+        headers["Content-Type"] = "application/json"
     if cookie:
         headers["Cookie"] = cookie
     req = urllib.request.Request(url, data=data, headers=headers, method="POST" if data is not None else "GET")
@@ -110,9 +109,10 @@ def api(cookie, path, payload=None):
 def get_stage(cookie):
     body = api(cookie, SELECT_INFO_URL)
     data = body.get("data")
-    if isinstance(data, dict):
-        return data
-    return body
+    stage = data if isinstance(data, dict) else body
+    if not stage.get("semesterYear") and str(stage.get("code")) != "200":
+        raise RuntimeError(stage.get("message") or "选课阶段信息无效")
+    return stage
 
 
 def list_courses(cookie, stage, target, page_no, page_size):
@@ -120,17 +120,19 @@ def list_courses(cookie, stage, target, page_no, page_size):
         "semesterYear": target.get("semesterYear") or stage.get("semesterYear") or "",
         "selectedType": target.get("selectedType", "1"),
         "selectedCate": target.get("selectedCate", "11"),
-        "hiddenConflictStatus": "0",
-        "hiddenSelectedStatus": "0",
-        "hiddenEmptyStatus": "0",
-        "vacancySortStatus": "0",
-        "collectionStatus": "0",
+        "hiddenConflictStatus": target.get("hiddenConflictStatus", "0"),
+        "hiddenSelectedStatus": target.get("hiddenSelectedStatus", "0"),
+        "hiddenEmptyStatus": target.get("hiddenEmptyStatus", "0"),
+        "vacancySortStatus": target.get("vacancySortStatus", "0"),
+        "collectionStatus": target.get("collectionStatus", "0"),
     }
     body = api(cookie, COURSE_LIST_URL, {
         "pageNo": page_no,
         "pageSize": page_size,
         "param": param,
     })
+    if str(body.get("code")) != "200":
+        raise RuntimeError(body.get("message") or "课程列表查询失败")
     data = body.get("data")
     if not isinstance(data, dict):
         return [], 0
@@ -299,7 +301,9 @@ def main():
                     print(f"[list] {t.get('name')} 第{page}页 连续失败，跳过")
                     continue
                 for row in rows:
-                    if matches(t, row):
+                    if not t.get("courseName") and not t.get("courseNum"):
+                        print(json.dumps({k: row.get(k) for k in keys}, ensure_ascii=False))
+                    elif matches(t, row):
                         print(json.dumps({k: row.get(k) for k in keys}, ensure_ascii=False))
                 if not rows or page * args.page_size >= total:
                     break

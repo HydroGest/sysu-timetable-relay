@@ -3,5 +3,7 @@ __pycache__/
 cookies.txt
 wecom_config.json
 targets.json
+targets_grab.json
+targets_pool.json
 .vscode/
 .idea/
