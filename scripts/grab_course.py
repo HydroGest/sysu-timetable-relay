@@ -62,6 +62,16 @@ def load_cookie(args):
                 cookie = f.read().strip()
         except OSError as e:
             print(f"[cookie] 读取 {args.cookie_file} 失败: {e}")
+    if not cookie:
+        default_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "server", "cookies.txt"
+        )
+        if os.path.exists(default_file):
+            try:
+                with open(default_file, "r", encoding="utf-8") as f:
+                    cookie = f.read().strip()
+            except OSError:
+                pass
     return cookie
 
 
@@ -209,6 +219,7 @@ def main():
     ap.add_argument("--no-confirm", action="store_true", help="遇到先修课检查时不自动二次确认")
     ap.add_argument("--page-size", type=int, default=50)
     ap.add_argument("--result", default="grab_result.json")
+    ap.add_argument("--list", action="store_true", help="只列出目标课程匹配到的教学班")
     args = ap.parse_args()
 
     interval = max(1.0, args.interval)
@@ -254,6 +265,23 @@ def main():
     semester = stage.get("semesterYear") or ""
     print(f"[stage] 学期={semester} 阶段={stage.get('electiveCourseStageName') or '?'} "
           f"选课开关={stage.get('chooseCourseStatus') or '?'} 退课开关={stage.get('retreatCourseStatus') or '?'}")
+
+    if args.list:
+        keys = (
+            "courseNum", "courseName", "teachingClassNum", "teachingClassName",
+            "teachingClassId", "teachCourseId", "remainNum", "selectedStatus",
+            "courseCateCode", "courseCate",
+        )
+        for t in targets:
+            print(f"== {t.get('name')} ==")
+            for page in range(1, 6):
+                rows, total = list_courses(cookie, stage, t, page, args.page_size)
+                for row in rows:
+                    if matches(t, row):
+                        print(json.dumps({k: row.get(k) for k in keys}, ensure_ascii=False))
+                if not rows or page * args.page_size >= total:
+                    break
+        return
 
     status = {t.get("name", i): {"status": "pending", "attempts": 0, "msg": ""} for i, t in enumerate(targets)}
     deadline = time.monotonic() + args.timeout

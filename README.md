@@ -226,6 +226,14 @@ python scripts\grab_course.py --targets targets.json --cookie "你的 Cookie"
 
 Cookie 可以直接从浏览器 F12 -> Network 里复制，也可以用 relay 的 `server\cookies.txt`（`--cookie-file`）。
 
+先确认目标能匹配到教学班，避免空跑：
+
+```powershell
+python scripts\grab_course.py --targets targets.json --list
+```
+
+`--list` 只查询并打印匹配到的教学班信息；`--dry-run` 只打印会发送的选课请求。两者都不会真正选课。
+
 目标字段：
 
 - `name`：显示名
