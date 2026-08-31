@@ -226,6 +226,8 @@ python scripts\grab_course.py --targets targets.json --cookie "你的 Cookie"
 
 Cookie 可以直接从浏览器 F12 -> Network 里复制，也可以用 relay 的 `server\cookies.txt`（`--cookie-file`）。
 
+想全自动的话，加载 `extension` 并运行 relay 后，在 Edge/Chrome 里登录一次教务系统即可：扩展会把 `sysu.edu.cn` 的 Cookie 推送到本机 relay，保存到 `server/cookies.txt`；抢课脚本没传 `--cookie` 时会自动读取这个文件。Codex 内置浏览器不支持加载扩展，那种情况只能手动粘贴 Cookie。
+
 先确认目标能匹配到教学班，避免空跑：
 
 ```powershell
